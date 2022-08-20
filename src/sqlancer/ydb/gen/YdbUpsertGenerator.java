@@ -35,7 +35,7 @@ public class YdbUpsertGenerator {
 
     public YdbUpsertQuery create(YdbGlobalState globalState) {
         YdbSchema.YdbTable table = globalState.getSchema().getRandomTable(t -> !t.isView());
-        List<YdbColumn> columns = table.getRandomNonEmptyColumnSubset();
+        List<YdbColumn> columns = table.getNonEmptySubsetWithAllPrimaryColumns();
 
         sb.append("UPSERT INTO ");
         sb.append("`");

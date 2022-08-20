@@ -41,7 +41,8 @@ public class YdbType {
                 PrimitiveType.int64(),
                 PrimitiveType.float32(),
                 PrimitiveType.float64(),
-                PrimitiveType.bool()
+                PrimitiveType.bool(),
+                PrimitiveType.string()
         ));
     }
 
@@ -55,7 +56,8 @@ public class YdbType {
                 PrimitiveType.int64(),
                 PrimitiveType.float32(),
                 PrimitiveType.float64(),
-                PrimitiveType.bool()
+                PrimitiveType.bool(),
+                PrimitiveType.string()
         ));
     }
 
@@ -67,7 +69,8 @@ public class YdbType {
                 PrimitiveType.uint64(),
                 PrimitiveType.int32(),
                 PrimitiveType.int64(),
-                PrimitiveType.bool()
+                PrimitiveType.bool(),
+                PrimitiveType.string()
         ));
     }
     YdbType(Type type) {

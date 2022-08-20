@@ -29,16 +29,24 @@ public class YdbSchema extends AbstractSchema<YdbGlobalState, YdbTable> {
 
     public static class YdbColumn extends AbstractTableColumn<YdbTable, YdbType> {
 
-        public YdbColumn(String name, YdbTable table, YdbType type) {
+        boolean isPrimary;
+
+        public YdbColumn(String name, YdbTable table, YdbType type, boolean isPrimary) {
             super(name, table, type);
+            this.isPrimary = isPrimary;
         }
 
-        public YdbColumn(String name, YdbType type) {
+        public YdbColumn(String name, YdbType type, boolean isPrimary) {
             super(name, null, type);
+            this.isPrimary = isPrimary;
+        }
+
+        public void setPrimary(boolean isPrimary) {
+            this.isPrimary = isPrimary;
         }
 
         public static YdbColumn createDummy(String name) {
-            return new YdbColumn(name, YdbType.getRandom());
+            return new YdbColumn(name, YdbType.getRandom(), false);
         }
         
     }
@@ -47,12 +55,27 @@ public class YdbSchema extends AbstractSchema<YdbGlobalState, YdbTable> {
 
         String fullPath;
         String dbPath;
+        List<YdbColumn> primaryColumns;
 
-        public YdbTable(String fullPath, String dbPath, List<YdbColumn> columns, List<TableIndex> indexes, boolean isView) {
+        public YdbTable(String fullPath, String dbPath, List<YdbColumn> columns, List<YdbColumn> primaryColumns, List<TableIndex> indexes, boolean isView) {
             super(dbPath, columns, indexes, isView);
             this.fullPath = fullPath;
             this.dbPath = dbPath;
+            this.primaryColumns = primaryColumns;
         }
+
+        public List<YdbColumn> getNonEmptySubsetWithAllPrimaryColumns() {
+            List<YdbColumn> result = getRandomNonEmptyColumnSubset();
+
+            for (YdbColumn col : primaryColumns) {
+                if (!result.contains(col)) {
+                    result.add(col);
+                }
+            }
+
+            return result;
+        }
+
 
         public String getFullPath() {
             return fullPath;
@@ -88,10 +111,15 @@ public class YdbSchema extends AbstractSchema<YdbGlobalState, YdbTable> {
         List<YdbTable> databaseTables = new ArrayList<>();
         List<String> tableFullPathes = getTableNames(con, root);
         for (String fullPath : tableFullPathes) {
-            List<YdbColumn> databaseColumns = getTableColumns(con, fullPath);
-            List<TableIndex> indexes = Collections.emptyList();
-            YdbTable t = new YdbTable(fullPath, cropLastDir(fullPath), databaseColumns, indexes, false);
-            for (YdbColumn c : databaseColumns) {
+            Map<ColumnDifferentiation, List<YdbColumn>> tableColumns = getTableColumns(con, fullPath);
+            YdbTable t = new YdbTable(
+                    fullPath,
+                    cropLastDir(fullPath),
+                    tableColumns.get(ColumnDifferentiation.ALL),
+                    tableColumns.get(ColumnDifferentiation.PRIMARY),
+                    Collections.emptyList(),
+                    false);
+            for (YdbColumn c : tableColumns.get(ColumnDifferentiation.ALL)) {
                 c.setTable(t);
             }
             databaseTables.add(t);
@@ -122,8 +150,16 @@ public class YdbSchema extends AbstractSchema<YdbGlobalState, YdbTable> {
         return tableNames;
     }
 
-    private static List<YdbColumn> getTableColumns(YdbConnection con, String tableName) {
-        List<YdbColumn> columns = new ArrayList<>();
+    private enum ColumnDifferentiation {
+        ALL,
+        PRIMARY
+    }
+
+    private static Map<ColumnDifferentiation, List<YdbColumn>> getTableColumns(YdbConnection con, String tableName) {
+        Map<ColumnDifferentiation, List<YdbColumn>> columns = new HashMap<>();
+        columns.put(ColumnDifferentiation.ALL, new ArrayList<>());
+        columns.put(ColumnDifferentiation.PRIMARY, new ArrayList<>());
+
         try (TableClient client = TableClient.newClient(GrpcTableRpc.useTransport(con.transport)).build()) {
             SessionRetryContext context = SessionRetryContext.create(client).build();
 
@@ -131,10 +167,17 @@ public class YdbSchema extends AbstractSchema<YdbGlobalState, YdbTable> {
                 return session.describeTable(tableName);
             }).join().expect("describe table error");
 
+            List<String> primaryKeys = description.getPrimaryKeys();
             for (TableColumn innerColumn : description.getColumns()) {
                 String name = innerColumn.getName();
                 Type type = innerColumn.getType();
-                columns.add(new YdbColumn(name, null, new YdbType(type)));
+                Boolean isPrimary = primaryKeys.contains(innerColumn.getName());
+                YdbColumn column = new YdbColumn(name, null, new YdbType(type), isPrimary);
+
+                columns.get(ColumnDifferentiation.ALL).add(column);
+                if (isPrimary) {
+                    columns.get(ColumnDifferentiation.PRIMARY).add(column);
+                }
             }
         }
         return columns;

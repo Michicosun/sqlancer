@@ -21,6 +21,7 @@ import java.util.List;
 public class YdbTableGenerator {
     private YdbTable table;
     private final List<YdbSchema.YdbColumn> columnsToBeAdded = new ArrayList<>();
+    private final List<YdbSchema.YdbColumn> primaryColumns = new ArrayList<>();
 
     private static ExpectedErrors errors;
 
@@ -32,7 +33,7 @@ public class YdbTableGenerator {
         String dbPath = globalState.getSchema().getFreeTableName();
         String fullPath = globalState.getDatabaseName() + "/" + dbPath;
         TableDescription.Builder builder = TableDescription.newBuilder();
-        table = new YdbTable(fullPath, dbPath, columnsToBeAdded, Collections.emptyList(), false);
+        table = new YdbTable(fullPath, dbPath, columnsToBeAdded, primaryColumns, Collections.emptyList(), false);
 
         int tableColumnSize = Randomly.smallNumber() + 1;
 
@@ -51,10 +52,11 @@ public class YdbTableGenerator {
             }
         }
 
-        List<YdbColumn> primaryColumns = Randomly.nonEmptySubset(canBePrimary);
+        primaryColumns.addAll(Randomly.nonEmptySubset(canBePrimary));
         List<String> primaryNames = new ArrayList<>();
         for (YdbColumn c : primaryColumns) {
             primaryNames.add(c.getName());
+            c.setPrimary(true);
         }
 
         builder.setPrimaryKeys(primaryNames);
@@ -64,7 +66,7 @@ public class YdbTableGenerator {
 
     private YdbColumn createColumn(String columnName, boolean mustBePrimary) {
         YdbType columnType = YdbType.getRandomColumnType(mustBePrimary);
-        YdbColumn newColumn = new YdbColumn(columnName, columnType);
+        YdbColumn newColumn = new YdbColumn(columnName, columnType, false);
         newColumn.setTable(table);
         columnsToBeAdded.add(newColumn);
         return newColumn;
