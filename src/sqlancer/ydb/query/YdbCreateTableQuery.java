@@ -2,12 +2,16 @@ package sqlancer.ydb.query;
 
 import com.yandex.ydb.table.SessionRetryContext;
 import com.yandex.ydb.table.TableClient;
+import com.yandex.ydb.table.description.TableColumn;
 import com.yandex.ydb.table.description.TableDescription;
 import com.yandex.ydb.table.rpc.grpc.GrpcTableRpc;
+import com.yandex.ydb.table.values.OptionalType;
 import sqlancer.GlobalState;
 import sqlancer.common.query.ExpectedErrors;
 import sqlancer.ydb.YdbConnection;
 import sqlancer.ydb.YdbQueryAdapter;
+
+import java.util.List;
 
 public class YdbCreateTableQuery extends YdbQueryAdapter {
 
@@ -23,7 +27,35 @@ public class YdbCreateTableQuery extends YdbQueryAdapter {
 
     @Override
     public String getLogString() {
-        return fullPath + " -> " + tableDesc.toString();
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("CREATE TABLE ");
+
+        sb.append("`");
+        sb.append(fullPath);
+        sb.append("`");
+
+        sb.append(" (");
+        for (TableColumn column : tableDesc.getColumns()) {
+            sb.append(column.getName());
+            sb.append(" ");
+            OptionalType type = (OptionalType) column.getType();
+            sb.append(type.getItemType().toString());
+            sb.append(", ");
+        }
+        sb.append("PRIMARY KEY");
+        sb.append("(");
+        List<String> primaryKeys = tableDesc.getPrimaryKeys();
+        for (int i = 0; i < primaryKeys.size(); ++i) {
+            sb.append(primaryKeys.get(i));
+            if (i + 1 < primaryKeys.size()) {
+                sb.append(", ");
+            }
+        }
+        sb.append(")");
+        sb.append(")");
+
+        return sb.toString();
     }
 
     @Override
