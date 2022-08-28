@@ -30,8 +30,8 @@ public class YdbTableGenerator {
     }
 
     public YdbQueryAdapter getQuery(YdbGlobalState globalState) {
-        String dbPath = globalState.getSchema().getFreeTableName();
-        String fullPath = globalState.getDatabaseName() + "/" + dbPath;
+        String dbPath = globalState.getInternalDatabasePath() + "/" + globalState.getSchema().getFreeTableName();
+        String fullPath = globalState.getDatabaseName() + "/" + globalState.getSchema().getFreeTableName();
         TableDescription.Builder builder = TableDescription.newBuilder();
         table = new YdbTable(fullPath, dbPath, columnsToBeAdded, primaryColumns, Collections.emptyList(), false);
 

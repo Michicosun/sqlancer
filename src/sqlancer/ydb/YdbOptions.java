@@ -8,6 +8,7 @@ import sqlancer.OracleFactory;
 import sqlancer.common.oracle.TestOracle;
 import sqlancer.ydb.YdbOptions.YdbOracleFactory;
 import sqlancer.ydb.YdbProvider.YdbGlobalState;
+import sqlancer.ydb.oracle.tlp.YdbTLPWhereOracle;
 
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -48,8 +49,7 @@ public class YdbOptions implements DBMSSpecificOptions<YdbOracleFactory> {
         TLPWhere {
             @Override
             public TestOracle create(YdbGlobalState globalState) throws SQLException {
-                return null;
-//                return new YdbTLPWhereOracle(globalState);
+                return new YdbTLPWhereOracle(globalState);
             }
         },
         TLPDistinct {

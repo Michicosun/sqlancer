@@ -11,8 +11,11 @@ import sqlancer.mongodb.MongoDBProvider;
 import sqlancer.ydb.YdbProvider.YdbGlobalState;
 import sqlancer.ydb.gen.YdbTableGenerator;
 import sqlancer.ydb.gen.YdbUpsertGenerator;
+import sqlancer.ydb.query.YdbUpsertQuery;
 
 import java.util.stream.Collectors;
+
+import static java.lang.System.exit;
 
 @AutoService(DatabaseProvider.class)
 public class YdbProvider extends ProviderAdapter<YdbGlobalState, YdbOptions, YdbConnection> {
@@ -81,10 +84,13 @@ public class YdbProvider extends ProviderAdapter<YdbGlobalState, YdbOptions, Ydb
             return ydbOptions.rootDir + "/" + super.getDatabaseName();
         }
 
+        public String getInternalDatabasePath() {
+            return super.getDatabaseName();
+        }
+
         @Override
         protected YdbSchema readSchema() {
-            String connectionUrl = ydbOptions.getConnectionURL();
-            return new YdbSchema(new YdbConnection(connectionUrl), getDatabaseName());
+            return new YdbSchema(getConnection(), getDatabaseName());
         }
 
     }

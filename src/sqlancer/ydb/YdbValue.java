@@ -48,10 +48,40 @@ public class YdbValue {
         Type type = val.getType();
         switch (type.getKind()) {
             case PRIMITIVE:
+                PrimitiveValue pv = (PrimitiveValue) val;
+                switch (pv.getType().getId()) {
+                    case Float32:
+                        return pv.toString() + "f";
+                    case Bool:
+                    case Int8:
+                    case Uint8:
+                    case Int16:
+                    case Uint16:
+                    case Int32:
+                    case Uint32:
+                    case Int64:
+                    case Uint64:
+                    case Float64:
+                    case String:
+                    case Utf8:
+                    case Yson:
+                    case Json:
+                    case Uuid:
+                    case Date:
+                    case Datetime:
+                    case Timestamp:
+                    case Interval:
+                    case TzDate:
+                    case TzDatetime:
+                    case TzTimestamp:
+                    case JsonDocument:
+                    case DyNumber:
+                        return pv.toString();
+                }
                 return val.toString();
             case OPTIONAL: {
                 OptionalValue ov = (OptionalValue) val;
-                return ov.get().toString();
+                return generateStringFrom(ov.get());
             }
             case LIST: {
                 ListValue lv = (ListValue) val;

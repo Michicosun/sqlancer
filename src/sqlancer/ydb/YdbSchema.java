@@ -10,8 +10,10 @@ import com.yandex.ydb.table.description.TableDescription;
 import com.yandex.ydb.table.rpc.grpc.GrpcSchemeRpc;
 import com.yandex.ydb.table.rpc.grpc.GrpcTableRpc;
 import com.yandex.ydb.table.values.Type;
+import sqlancer.Randomly;
 import sqlancer.common.schema.*;
 
+import sqlancer.postgres.PostgresSchema;
 import sqlancer.ydb.YdbProvider.YdbGlobalState;
 import sqlancer.ydb.YdbSchema.YdbTable;
 
@@ -58,7 +60,7 @@ public class YdbSchema extends AbstractSchema<YdbGlobalState, YdbTable> {
         List<YdbColumn> primaryColumns;
 
         public YdbTable(String fullPath, String dbPath, List<YdbColumn> columns, List<YdbColumn> primaryColumns, List<TableIndex> indexes, boolean isView) {
-            super(dbPath, columns, indexes, isView);
+            super(cropLastDir(dbPath), columns, indexes, isView);
             this.fullPath = fullPath;
             this.dbPath = dbPath;
             this.primaryColumns = primaryColumns;
@@ -108,13 +110,14 @@ public class YdbSchema extends AbstractSchema<YdbGlobalState, YdbTable> {
     }
 
     private static List<YdbTable> getDatabaseTables(YdbConnection con, String root) {
+        String databaseDir = cropLastDir(root);
         List<YdbTable> databaseTables = new ArrayList<>();
-        List<String> tableFullPathes = getTableNames(con, root);
-        for (String fullPath : tableFullPathes) {
+        List<String> tableFullPaths = getTableNames(con, root);
+        for (String fullPath : tableFullPaths) {
             Map<ColumnDifferentiation, List<YdbColumn>> tableColumns = getTableColumns(con, fullPath);
             YdbTable t = new YdbTable(
                     fullPath,
-                    cropLastDir(fullPath),
+                    databaseDir + "/" + cropLastDir(fullPath),
                     tableColumns.get(ColumnDifferentiation.ALL),
                     tableColumns.get(ColumnDifferentiation.PRIMARY),
                     Collections.emptyList(),
@@ -181,6 +184,10 @@ public class YdbSchema extends AbstractSchema<YdbGlobalState, YdbTable> {
             }
         }
         return columns;
+    }
+
+    public YdbTables getRandomTableNonEmptyTables() {
+        return new YdbTables(Randomly.nonEmptySubset(getDatabaseTables()));
     }
 
 }
