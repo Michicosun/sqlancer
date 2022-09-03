@@ -96,16 +96,6 @@ public class YdbBinaryArithmeticOperation extends BinaryOperatorNode<YdbExpressi
     }
 
     @Override
-    public YdbConstant getExpectedValue() {
-        YdbConstant leftExpected = getLeft().getExpectedValue();
-        YdbConstant rightExpected = getRight().getExpectedValue();
-        if (leftExpected == null || rightExpected == null) {
-            return null;
-        }
-        return getOp().apply(leftExpected, rightExpected);
-    }
-
-    @Override
     public YdbType getExpressionType() {
         YdbType lType = getLeft().getExpressionType();
         YdbType rType = getRight().getExpressionType();

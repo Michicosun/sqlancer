@@ -1348,10 +1348,6 @@ public abstract class YdbConstant implements YdbExpression {
 
 
 
-    @Override
-    public YdbConstant getExpectedValue() {
-        return this;
-    }
 
     public abstract YdbConstant isEquals(YdbConstant rightVal);
 

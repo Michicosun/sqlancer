@@ -1,49 +1,48 @@
 package sqlancer.ydb.ast;
 
-import sqlancer.Randomly;
-import sqlancer.ydb.YdbType;
+import java.util.ArrayList;
+import java.util.List;
 
-public class YdbJoin implements YdbExpression {
+public class YdbJoin implements YdbSource {
 
-    public enum YdbJoinType {
-        INNER, LEFT, RIGHT, FULL, CROSS;
+    public enum JoinType {
+        CROSS, LEFT, RIGHT, FULL
+    }
 
-        public static YdbJoinType getRandom() {
-            return Randomly.fromOptions(values());
+    List<YdbAliasTable> joinTables;
+    List<JoinType> joinTypes;
+    List<YdbExpression> joinConditions;
+
+    public List<YdbAliasTable> getJoinTables() {
+        return joinTables;
+    }
+
+    public List<JoinType> getJoinTypes() {
+        return joinTypes;
+    }
+
+    public List<YdbExpression> getJoinConditions() {
+        return joinConditions;
+    }
+
+    public YdbJoin(List<YdbAliasTable> joinTables, List<JoinType> joinTypes, List<YdbExpression> joinConditions) {
+        this.joinTables = joinTables;
+        this.joinTypes = joinTypes;
+        this.joinConditions = joinConditions;
+    }
+
+    @Override
+    public List<YdbColumnNode> getSourceColumns() {
+        List<YdbColumnNode> columns = new ArrayList<>();
+        for (YdbAliasTable table : joinTables) {
+            columns.addAll(table.getSourceColumns());
         }
-
-    }
-
-    private final YdbExpression tableReference;
-    private final YdbExpression onClause;
-    private final YdbJoinType type;
-
-    public YdbJoin(YdbExpression tableReference, YdbExpression onClause, YdbJoinType type) {
-        this.tableReference = tableReference;
-        this.onClause = onClause;
-        this.type = type;
-    }
-
-    public YdbExpression getTableReference() {
-        return tableReference;
-    }
-
-    public YdbExpression getOnClause() {
-        return onClause;
-    }
-
-    public YdbJoinType getType() {
-        return type;
+        return columns;
     }
 
     @Override
-    public YdbType getExpressionType() {
-        throw new AssertionError();
-    }
-
-    @Override
-    public YdbConstant getExpectedValue() {
-        throw new AssertionError();
+    public String getName() {
+        return null;
     }
 
 }

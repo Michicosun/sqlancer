@@ -3,7 +3,6 @@ package sqlancer.ydb.gen;
 import sqlancer.IgnoreMeException;
 import sqlancer.Randomly;
 import sqlancer.common.gen.ExpressionGenerator;
-import sqlancer.ydb.YdbProvider;
 import sqlancer.ydb.YdbSchema.YdbColumn;
 import sqlancer.ydb.YdbProvider.YdbGlobalState;
 import sqlancer.ydb.YdbType;
@@ -29,7 +28,7 @@ public class YdbExpressionGenerator implements ExpressionGenerator<YdbExpression
 
     private final Randomly r;
 
-    private List<YdbColumn> columns;
+    private List<YdbColumnNode> columns;
 
     private boolean expectedResult;
 
@@ -43,9 +42,17 @@ public class YdbExpressionGenerator implements ExpressionGenerator<YdbExpression
         this.globalState = globalState;
     }
 
-    public YdbExpressionGenerator setColumns(List<YdbColumn> columns) {
+    public YdbExpressionGenerator setColumns(List<YdbColumnNode> columns) {
         this.columns = columns;
         return this;
+    }
+
+    public List<YdbColumnNode> getColumns() {
+        return columns;
+    }
+
+    public Randomly getRandomly() {
+        return r;
     }
 
     public YdbExpression generateExpression(int depth) {
@@ -53,11 +60,10 @@ public class YdbExpressionGenerator implements ExpressionGenerator<YdbExpression
     }
 
     public List<YdbExpression> generateOrderBy() {
-        List<YdbExpression> orderBys = new ArrayList<>();
-        for (int i = 0; i < Randomly.smallNumber(); i++) {
-            orderBys.add(new YdbOrderByTerm(YdbColumnValue.create(Randomly.fromList(columns), null),
-                    YdbOrder.getRandomOrder()));
-        }
+        List<YdbExpression> orderBys = Randomly.nonEmptySubset(columns).stream()
+                .map(t -> new YdbOrderByTerm(t, YdbOrder.getRandomOrder()))
+                .collect(Collectors.toList());
+
         return orderBys;
     }
 
@@ -243,7 +249,7 @@ public class YdbExpressionGenerator implements ExpressionGenerator<YdbExpression
 
     private YdbExpression generateConcat(int depth) {
         YdbExpression left = generateExpression(depth + 1, YdbType.string());
-        YdbExpression right = generateExpression(depth + 1);
+        YdbExpression right = generateExpression(depth + 1, YdbType.string());
         return new YdbConcatOperation(left, right);
     }
 
@@ -299,12 +305,12 @@ public class YdbExpressionGenerator implements ExpressionGenerator<YdbExpression
     }
 
     private YdbExpression createColumnOfType(YdbType type) {
-        List<YdbColumn> columns = filterColumns(type);
-        YdbColumn fromList = Randomly.fromList(columns);
-        return YdbColumnValue.create(fromList, null);
+        List<YdbColumnNode> columns = filterColumns(type);
+        YdbColumnNode fromList = Randomly.fromList(columns);
+        return fromList;
     }
 
-    final List<YdbColumn> filterColumns(YdbType type) {
+    final List<YdbColumnNode> filterColumns(YdbType type) {
         if (columns == null) {
             return Collections.emptyList();
         } else {
@@ -312,20 +318,7 @@ public class YdbExpressionGenerator implements ExpressionGenerator<YdbExpression
         }
     }
 
-    public YdbExpression generateExpressionWithExpectedResult(YdbType type) {
-        this.expectedResult = true;
-        YdbExpressionGenerator gen = new YdbExpressionGenerator(globalState).setColumns(columns);
-        YdbExpression expr;
-        do {
-            expr = gen.generateExpression(type);
-        } while (expr.getExpectedValue() == null);
-        return expr;
-    }
-
     public static YdbExpression generateConstant(Randomly r, YdbType type) {
-        if (Randomly.getBooleanWithSmallProbability()) {
-            return YdbConstant.createNullConstant();
-        }
         switch (type.typeClass) {
             case BOOL:
                 return YdbConstant.createBooleanConstant(Randomly.getBoolean());
@@ -342,13 +335,13 @@ public class YdbExpressionGenerator implements ExpressionGenerator<YdbExpression
             case INT64:
                 return YdbConstant.createInt64Constant(r.getInteger());
             case UINT8:
-                return YdbConstant.createUInt8Constant(r.getInteger());
+                return YdbConstant.createUInt8Constant(r.getPositiveInteger());
             case UINT16:
-                return YdbConstant.createUInt16Constant(r.getInteger());
+                return YdbConstant.createUInt16Constant(r.getPositiveInteger());
             case UINT32:
-                return YdbConstant.createUInt32Constant(r.getInteger());
+                return YdbConstant.createUInt32Constant(r.getPositiveInteger());
             case UINT64:
-                return YdbConstant.createUInt64Constant(r.getInteger());
+                return YdbConstant.createUInt64Constant(r.getPositiveInteger());
             case STRING:
                 return YdbConstant.createStringConstant(r.getString());
             default:
@@ -356,11 +349,11 @@ public class YdbExpressionGenerator implements ExpressionGenerator<YdbExpression
         }
     }
 
-    public static YdbExpression generateExpression(YdbGlobalState globalState, List<YdbColumn> columns, YdbType type) {
+    public static YdbExpression generateExpression(YdbGlobalState globalState, List<YdbColumnNode> columns, YdbType type) {
         return new YdbExpressionGenerator(globalState).setColumns(columns).generateExpression(0, type);
     }
 
-    public static YdbExpression generateExpression(YdbGlobalState globalState, List<YdbColumn> columns) {
+    public static YdbExpression generateExpression(YdbGlobalState globalState, List<YdbColumnNode> columns) {
         return new YdbExpressionGenerator(globalState).setColumns(columns).generateExpression(0);
     }
 

@@ -93,15 +93,6 @@ public class YdbPostfixOperation implements YdbExpression {
         return YdbType.bool();
     }
 
-    @Override
-    public YdbConstant getExpectedValue() {
-        YdbConstant expectedValue = expr.getExpectedValue();
-        if (expectedValue == null) {
-            return null;
-        }
-        return op.apply(expectedValue);
-    }
-
     public String getOperatorTextRepresentation() {
         return operatorTextRepresentation;
     }

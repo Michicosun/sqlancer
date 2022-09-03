@@ -1,8 +1,6 @@
 package sqlancer.ydb;
 
 import sqlancer.ydb.ast.*;
-import sqlancer.ydb.ast.YdbSelect.YdbFromTable;
-import sqlancer.ydb.ast.YdbSelect.YdbSubquery;
 import sqlancer.ydb.YdbProvider.YdbGlobalState;
 import sqlancer.ydb.gen.YdbExpressionGenerator;
 
@@ -10,9 +8,8 @@ import java.util.List;
 
 public interface YdbVisitor {
 
+    // expressions
     void visit(YdbConstant constant);
-
-    void visit(YdbColumnValue c);
 
     void visit(YdbPrefixOperation op);
     
@@ -30,21 +27,53 @@ public interface YdbVisitor {
 
     void visit(YdbAggregate op);
 
-    void visit(YdbFromTable from);
-
-    void visit(YdbSubquery subquery);
-
     void visit(YdbBinaryLogicalOperation op);
 
     void visit(YdbLikeOperation op);
+
+    void visit(YdbExpressionAlias exprAlias);
+
+    // columns
+    void visit(YdbRealColumn column);
+
+    void visit(YdbAliasColumn column);
+
+    // tables
+    void visit(YdbRealTable table);
+
+    void visit(YdbJoin join);
+
+    void visit(YdbAliasTable table);
+
+    void visit(YdbSubquery subquery);
+
+    default void visit(YdbColumnNode column) {
+        if (column instanceof YdbRealColumn) {
+            visit((YdbRealColumn) column);
+        } else if (column instanceof YdbAliasColumn) {
+            visit((YdbAliasColumn) column);
+        }
+    }
+
+    default void visit(YdbSource source) {
+        if (source instanceof YdbRealTable) {
+            visit((YdbRealTable) source);
+        } else if (source instanceof YdbJoin) {
+            visit((YdbJoin) source);
+        } else if (source instanceof YdbAliasTable) {
+            visit((YdbAliasTable) source);
+        } else if (source instanceof YdbSubquery) {
+            visit((YdbSubquery) source);
+        }
+    }
 
     default void visit(YdbExpression expression) {
         if (expression instanceof YdbConstant) {
             visit((YdbConstant) expression);
         } else if (expression instanceof YdbPostfixOperation) {
             visit((YdbPostfixOperation) expression);
-        } else if (expression instanceof YdbColumnValue) {
-            visit((YdbColumnValue) expression);
+        } else if (expression instanceof YdbRealColumn) {
+            visit((YdbRealColumn) expression);
         } else if (expression instanceof YdbPrefixOperation) {
             visit((YdbPrefixOperation) expression);
         } else if (expression instanceof YdbSelect) {
@@ -59,12 +88,10 @@ public interface YdbVisitor {
             visit((YdbInOperation) expression);
         } else if (expression instanceof YdbAggregate) {
             visit((YdbAggregate) expression);
-        } else if (expression instanceof YdbFromTable) {
-            visit((YdbFromTable) expression);
-        } else if (expression instanceof YdbSubquery) {
-            visit((YdbSubquery) expression);
         } else if (expression instanceof YdbLikeOperation) {
             visit((YdbLikeOperation) expression);
+        } else if (expression instanceof YdbExpressionAlias) {
+            visit((YdbExpressionAlias) expression);
         } else {
             throw new AssertionError(expression);
         }
@@ -76,7 +103,7 @@ public interface YdbVisitor {
         return visitor.get();
     }
 
-    static String getExpressionAsString(YdbGlobalState globalState, YdbType type, List<YdbSchema.YdbColumn> columns) {
+    static String getExpressionAsString(YdbGlobalState globalState, YdbType type, List<YdbColumnNode> columns) {
         YdbExpression expression = YdbExpressionGenerator.generateExpression(globalState, columns, type);
         YdbToStringVisitor visitor = new YdbToStringVisitor();
         visitor.visit(expression);

@@ -72,4 +72,9 @@ public class YdbAggregate extends FunctionNode<YdbAggregateFunction, YdbExpressi
         super(func, args);
     }
 
+    @Override
+    public YdbType getExpressionType() {
+        return null;
+    }
+
 }

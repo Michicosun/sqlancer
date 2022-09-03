@@ -25,17 +25,13 @@ public class YdbTLPWhereOracle extends YdbTLPBase {
     }
 
     protected void whereCheck() throws Exception {
-        if (Randomly.getBooleanWithRatherLowProbability()) {
-            select.setOrderByExpressions(gen.generateOrderBy());
-        }
-
 //        YdbSelectQuery adapter = new YdbSelectQuery(select);
         System.out.println("original: " + YdbVisitor.asString(select));
 //        List<List<Value<?>>> fullResultSet = YdbComparatorHelper.getResultSet(adapter, state);
 
 //        List<List<Value<?>>> compoundResultSet = new ArrayList<>();
 
-        select.setOrderByExpressions(Collections.emptyList());
+        select.setOrderByClause(Collections.emptyList());
 
         select.setWhereClause(predicate);
         System.out.println("predicate: " + YdbVisitor.asString(select));

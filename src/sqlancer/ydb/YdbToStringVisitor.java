@@ -1,12 +1,11 @@
 package sqlancer.ydb;
 
-import sqlancer.Randomly;
 import sqlancer.common.visitor.BinaryOperation;
 import sqlancer.common.visitor.ToStringVisitor;
+import sqlancer.ydb.ast.YdbJoin.JoinType;
 import sqlancer.ydb.ast.*;
-import sqlancer.ydb.ast.YdbSelect.YdbFromTable;
-import sqlancer.ydb.ast.YdbSelect.YdbSubquery;
-import sqlancer.ydb.YdbType;
+
+import java.util.List;
 
 public final class YdbToStringVisitor extends ToStringVisitor<YdbExpression> implements YdbVisitor {
 
@@ -26,20 +25,6 @@ public final class YdbToStringVisitor extends ToStringVisitor<YdbExpression> imp
     }
 
     @Override
-    public void visit(YdbColumnValue c) {
-        YdbSchema.YdbColumn col = c.getColumn();
-        if (col.getName().equals("*")) {
-            sb.append("*");
-        } else {
-            YdbSchema.YdbTable table = col.getTable();
-            sb.append("`");
-            sb.append(table.getDbPath());
-            sb.append("`.");
-            sb.append(col.getName());
-        }
-    }
-
-    @Override
     public void visit(YdbPrefixOperation op) {
         sb.append(op.getTextRepresentation());
         sb.append(" (");
@@ -48,80 +33,34 @@ public final class YdbToStringVisitor extends ToStringVisitor<YdbExpression> imp
     }
 
     @Override
-    public void visit(YdbFromTable from) {
-        sb.append("`");
-        sb.append(from.getTable().getDbPath());
-        sb.append("`");
-    }
-
-    @Override
-    public void visit(YdbSubquery subquery) {
-        sb.append("(");
-        visit(subquery.getSelect());
-        sb.append(") AS ");
-        sb.append(subquery.getName());
-    }
-
-    @Override
     public void visit(YdbSelect s) {
         sb.append("SELECT ");
-        switch (s.getSelectOption()) {
-        case DISTINCT:
+        if (s.getFromOptions() == YdbSelect.SelectType.DISTINCT) {
             sb.append("DISTINCT ");
-            break;
         }
         if (s.getFetchColumns() == null) {
             sb.append("*");
         } else {
-            visit(s.getFetchColumns());
+            visitListOfColumns(s.getFetchColumns());
         }
         sb.append(" FROM ");
-        visit(s.getFromList());
-
-        for (YdbJoin j : s.getJoinClauses()) {
-            sb.append(" ");
-            switch (j.getType()) {
-            case INNER:
-                sb.append("INNER JOIN");
-                break;
-            case LEFT:
-                sb.append("LEFT OUTER JOIN");
-                break;
-            case RIGHT:
-                sb.append("RIGHT OUTER JOIN");
-                break;
-            case FULL:
-                sb.append("FULL OUTER JOIN");
-                break;
-            case CROSS:
-                sb.append("CROSS JOIN");
-                break;
-            default:
-                throw new AssertionError(j.getType());
-            }
-            sb.append(" ");
-            visit(j.getTableReference());
-            if (j.getType() != YdbJoin.YdbJoinType.CROSS) {
-                sb.append(" ON ");
-                visit(j.getOnClause());
-            }
-        }
+        visit(s.getSource());
 
         if (s.getWhereClause() != null) {
             sb.append(" WHERE ");
             visit(s.getWhereClause());
         }
-        if (s.getGroupByExpressions().size() > 0) {
+        if (s.getGroupByClause().size() > 0) {
             sb.append(" GROUP BY ");
-            visit(s.getGroupByExpressions());
+            visit(s.getGroupByClause());
         }
         if (s.getHavingClause() != null) {
             sb.append(" HAVING ");
             visit(s.getHavingClause());
         }
-        if (!s.getOrderByExpressions().isEmpty()) {
+        if (!s.getOrderByClause().isEmpty()) {
             sb.append(" ORDER BY ");
-            visit(s.getOrderByExpressions());
+            visit(s.getOrderByClause());
         }
         if (s.getLimitClause() != null) {
             sb.append(" LIMIT ");
@@ -136,7 +75,7 @@ public final class YdbToStringVisitor extends ToStringVisitor<YdbExpression> imp
 
     @Override
     public void visit(YdbOrderByTerm op) {
-        visit(op.getExpr());
+        sb.append(op.getColumn().getName());
         sb.append(" ");
         sb.append(op.getOrder());
     }
@@ -246,6 +185,79 @@ public final class YdbToStringVisitor extends ToStringVisitor<YdbExpression> imp
     @Override
     public void visit(YdbLikeOperation op) {
         super.visit((BinaryOperation<YdbExpression>) op);
+    }
+
+    @Override
+    public void visit(YdbExpressionAlias exprAlias) {
+        YdbExpression expression = exprAlias.getExpression();
+        visit(expression);
+        sb.append(" AS " + exprAlias.getAlias());
+    }
+
+    public void visitListOfColumns(List<YdbColumnNode> expressions) {
+        for (int i = 0; i < expressions.size(); i++) {
+            if (i != 0) {
+                sb.append(", ");
+            }
+            visit(expressions.get(i));
+        }
+    }
+
+    //columns
+    @Override
+    public void visit(YdbRealColumn column) {
+        YdbSource source = column.getSource();
+        if (source != null) {
+            sb.append(source.getName() + ".");
+        }
+        sb.append(column.getName());
+    }
+
+    @Override
+    public void visit(YdbAliasColumn column) {
+        YdbExpression realExpression = column.getRealExpression();
+        visit(realExpression);
+        sb.append(" AS " + column.getName());
+    }
+
+    // sources
+    @Override
+    public void visit(YdbSubquery subquery) {
+        sb.append("(");
+        visit(subquery.getSelect());
+        sb.append(") AS ");
+        sb.append(subquery.getAlias());
+    }
+
+    @Override
+    public void visit(YdbRealTable table) {
+        sb.append("`" + table.getTable().getFullPath() + "`");
+    }
+
+    @Override
+    public void visit(YdbJoin join) {
+        List<YdbAliasTable> tables = join.getJoinTables();
+        List<JoinType> joinTypes = join.getJoinTypes();
+        List<YdbExpression> joinConditions = join.getJoinConditions();
+
+        visit(tables.get(0));
+        for (int i = 0; i < joinTypes.size(); ++i) {
+            sb.append(" " + joinTypes.get(i).toString() + " JOIN ");
+            visit(tables.get(i + 1));
+            if (joinConditions.get(i) != null) {
+                sb.append(" ON ");
+                visit(joinConditions.get(i));
+            }
+            if (i + 1 < joinTypes.size()) {
+                sb.append(" ");
+            }
+        }
+
+    }
+
+    @Override
+    public void visit(YdbAliasTable table) {
+        sb.append("`" + table.getRealTable().getFullPath() + "` AS " + table.getAlias());
     }
 
 }

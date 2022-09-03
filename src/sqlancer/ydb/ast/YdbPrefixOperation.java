@@ -322,15 +322,6 @@ public class YdbPrefixOperation implements YdbExpression {
         return op.getExpressionType();
     }
 
-    @Override
-    public YdbConstant getExpectedValue() {
-        YdbConstant expectedValue = expr.getExpectedValue();
-        if (expectedValue == null) {
-            return null;
-        }
-        return op.getExpectedValue(expectedValue);
-    }
-
     public YdbType[] getInputDataTypes() {
         return op.dataTypes;
     }

@@ -20,15 +20,6 @@ public class YdbCastOperation implements YdbExpression {
         return type;
     }
 
-    @Override
-    public YdbConstant getExpectedValue() {
-        YdbConstant expectedValue = expression.getExpectedValue();
-        if (expectedValue == null) {
-            return null;
-        }
-        return expectedValue.cast(type);
-    }
-
     public YdbExpression getExpression() {
         return expression;
     }

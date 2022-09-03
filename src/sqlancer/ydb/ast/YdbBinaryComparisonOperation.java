@@ -102,16 +102,6 @@ public class YdbBinaryComparisonOperation  extends BinaryOperatorNode<YdbExpress
     }
 
     @Override
-    public YdbConstant getExpectedValue() {
-        YdbConstant leftExpectedValue = getLeft().getExpectedValue();
-        YdbConstant rightExpectedValue = getRight().getExpectedValue();
-        if (leftExpectedValue == null || rightExpectedValue == null) {
-            return null;
-        }
-        return getOp().getExpectedValue(leftExpectedValue, rightExpectedValue);
-    }
-
-    @Override
     public YdbType getExpressionType() {
         return YdbType.bool();
     }

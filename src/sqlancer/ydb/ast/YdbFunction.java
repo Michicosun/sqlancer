@@ -25,7 +25,7 @@ public class YdbFunction implements YdbExpression {
     }
 
     public enum YdbFunctionWithResult {
-        ABS(1, "abs") {
+        ABS(1, "ABS") {
 
             @Override
             public YdbConstant apply(YdbConstant[] evaluatedArgs, YdbExpression... args) {
@@ -56,7 +56,7 @@ public class YdbFunction implements YdbExpression {
             }
 
         },
-        LENGTH(1, "length") {
+        LENGTH(1, "LENGTH") {
             @Override
             public YdbConstant apply(YdbConstant[] evaluatedArgs, YdbExpression... args) {
                 if (evaluatedArgs[0].isNull()) {
@@ -171,21 +171,6 @@ public class YdbFunction implements YdbExpression {
             return true;
         }
 
-    }
-
-    @Override
-    public YdbConstant getExpectedValue() {
-        if (functionWithKnownResult == null) {
-            return null;
-        }
-        YdbConstant[] constants = new YdbConstant[args.length];
-        for (int i = 0; i < constants.length; i++) {
-            constants[i] = args[i].getExpectedValue();
-            if (constants[i] == null) {
-                return null;
-            }
-        }
-        return functionWithKnownResult.apply(constants, args);
     }
 
     @Override

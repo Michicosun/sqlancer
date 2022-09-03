@@ -15,21 +15,6 @@ public class YdbConcatOperation extends BinaryNode<YdbExpression> implements Ydb
     }
 
     @Override
-    public YdbConstant getExpectedValue() {
-        YdbConstant leftExpectedValue = getLeft().getExpectedValue();
-        YdbConstant rightExpectedValue = getRight().getExpectedValue();
-        if (leftExpectedValue == null || rightExpectedValue == null) {
-            return null;
-        }
-        if (leftExpectedValue.isNull() || rightExpectedValue.isNull()) {
-            return YdbConstant.createNullConstant();
-        }
-        String leftStr = leftExpectedValue.cast(YdbType.string()).getUnquotedTextRepresentation();
-        String rightStr = rightExpectedValue.cast(YdbType.string()).getUnquotedTextRepresentation();
-        return YdbConstant.createStringConstant(leftStr + rightStr);
-    }
-
-    @Override
     public String getOperatorRepresentation() {
         return "||";
     }

@@ -5,8 +5,8 @@ import sqlancer.ydb.YdbType;
 
 public class YdbOrderByTerm implements YdbExpression {
 
+    private final YdbColumnNode column;
     private final YdbOrder order;
-    private final YdbExpression expr;
 
     public enum YdbOrder {
         ASC, DESC;
@@ -16,8 +16,8 @@ public class YdbOrderByTerm implements YdbExpression {
         }
     }
 
-    public YdbOrderByTerm(YdbExpression expr, YdbOrder order) {
-        this.expr = expr;
+    public YdbOrderByTerm(YdbColumnNode column, YdbOrder order) {
+        this.column = column;
         this.order = order;
     }
 
@@ -25,13 +25,8 @@ public class YdbOrderByTerm implements YdbExpression {
         return order;
     }
 
-    public YdbExpression getExpr() {
-        return expr;
-    }
-
-    @Override
-    public YdbConstant getExpectedValue() {
-        throw new AssertionError(this);
+    public YdbColumnNode getColumn() {
+        return column;
     }
 
     @Override

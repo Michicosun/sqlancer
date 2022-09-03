@@ -73,14 +73,4 @@ public class YdbBinaryLogicalOperation extends BinaryOperatorNode<YdbExpression,
         return YdbType.bool();
     }
 
-    @Override
-    public YdbConstant getExpectedValue() {
-        YdbConstant leftExpectedValue = getLeft().getExpectedValue();
-        YdbConstant rightExpectedValue = getRight().getExpectedValue();
-        if (leftExpectedValue == null || rightExpectedValue == null) {
-            return null;
-        }
-        return getOp().apply(leftExpectedValue, rightExpectedValue);
-    }
-
 }
