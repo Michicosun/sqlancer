@@ -100,8 +100,7 @@ public class YdbProvider extends ProviderAdapter<YdbGlobalState, YdbOptions, Ydb
         YdbOptions ydbOptions = globalState.getDbmsSpecificOptions();
         globalState.setYdbOptions(ydbOptions);
 
-        String connectionURL = ydbOptions.getConnectionURL();
-        YdbConnection connection = new YdbConnection(connectionURL);
+        YdbConnection connection = new YdbConnection(ydbOptions);
 
         YdbDatabaseDeleter deleter = new YdbDatabaseDeleter(connection);
         deleter.deleteFolder(globalState.getDatabaseName());

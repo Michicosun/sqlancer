@@ -41,6 +41,13 @@ public class YdbOptions implements DBMSSpecificOptions<YdbOracleFactory> {
     @Parameter(names = "--root", description = "Specifies the root database", arity = 1)
     public String rootDir = DEFAULT_ROOT_DIR;
 
+    @Parameter(names = "--token", description = "Access Token", arity = 1)
+    public String accessToken = "";
+
+    public boolean hasToken() {
+        return !accessToken.isEmpty();
+    }
+
     public String getConnectionURL() {
         return endpoint + "/?database=" + rootDir;
     }
