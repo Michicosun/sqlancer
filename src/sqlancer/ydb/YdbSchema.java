@@ -134,22 +134,21 @@ public class YdbSchema extends AbstractSchema<YdbGlobalState, YdbTable> {
         List<String> tableNames = new ArrayList<>();
         Stack<String> dirs = new Stack<>();
         dirs.push(root);
-        try (SchemeClient client = SchemeClient.newClient(GrpcSchemeRpc.useTransport(con.transport)).build()) {
-            while (!dirs.empty()) {
-                String dir = dirs.peek();
-                dirs.pop();
+        while (!dirs.empty()) {
+            String dir = dirs.peek();
+            dirs.pop();
 
-                ListDirectoryResult listResult = client.listDirectory(dir).join().expect("list directory error");
-                for (SchemeOperationProtos.Entry child : listResult.getChildren()) {
-                    String entryName = dir + "/" + child.getName();
-                    if (child.getType() == SchemeOperationProtos.Entry.Type.DIRECTORY) {
-                        dirs.push(entryName);
-                    } else if (child.getType() == SchemeOperationProtos.Entry.Type.TABLE) {
-                        tableNames.add(entryName);
-                    }
+            ListDirectoryResult listResult = con.schemeClient.listDirectory(dir).join().expect("list directory error");
+            for (SchemeOperationProtos.Entry child : listResult.getChildren()) {
+                String entryName = dir + "/" + child.getName();
+                if (child.getType() == SchemeOperationProtos.Entry.Type.DIRECTORY) {
+                    dirs.push(entryName);
+                } else if (child.getType() == SchemeOperationProtos.Entry.Type.TABLE) {
+                    tableNames.add(entryName);
                 }
             }
         }
+
         return tableNames;
     }
 
@@ -163,26 +162,25 @@ public class YdbSchema extends AbstractSchema<YdbGlobalState, YdbTable> {
         columns.put(ColumnDifferentiation.ALL, new ArrayList<>());
         columns.put(ColumnDifferentiation.PRIMARY, new ArrayList<>());
 
-        try (TableClient client = TableClient.newClient(GrpcTableRpc.useTransport(con.transport)).build()) {
-            SessionRetryContext context = SessionRetryContext.create(client).build();
+        SessionRetryContext context = con.sessionRetryContext;
 
-            TableDescription description = context.supplyResult(session -> {
-                return session.describeTable(tableName);
-            }).join().expect("describe table error");
+        TableDescription description = context.supplyResult(session -> {
+            return session.describeTable(tableName);
+        }).join().expect("describe table error");
 
-            List<String> primaryKeys = description.getPrimaryKeys();
-            for (TableColumn innerColumn : description.getColumns()) {
-                String name = innerColumn.getName();
-                Type type = innerColumn.getType();
-                Boolean isPrimary = primaryKeys.contains(innerColumn.getName());
-                YdbColumn column = new YdbColumn(name, null, new YdbType(type), isPrimary);
+        List<String> primaryKeys = description.getPrimaryKeys();
+        for (TableColumn innerColumn : description.getColumns()) {
+            String name = innerColumn.getName();
+            Type type = innerColumn.getType();
+            Boolean isPrimary = primaryKeys.contains(innerColumn.getName());
+            YdbColumn column = new YdbColumn(name, null, new YdbType(type), isPrimary);
 
-                columns.get(ColumnDifferentiation.ALL).add(column);
-                if (isPrimary) {
-                    columns.get(ColumnDifferentiation.PRIMARY).add(column);
-                }
+            columns.get(ColumnDifferentiation.ALL).add(column);
+            if (isPrimary) {
+                columns.get(ColumnDifferentiation.PRIMARY).add(column);
             }
         }
+
         return columns;
     }
 

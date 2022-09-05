@@ -105,8 +105,8 @@ public class YdbProvider extends ProviderAdapter<YdbGlobalState, YdbOptions, Ydb
         YdbDatabaseDeleter deleter = new YdbDatabaseDeleter(connection);
         deleter.deleteFolder(globalState.getDatabaseName());
 
-        try (SchemeClient client = SchemeClient.newClient(GrpcSchemeRpc.useTransport(connection.transport)).build()) {
-            client.makeDirectory(globalState.getDatabaseName()).join().expect("create directory error");
+        try {
+            connection.schemeClient.makeDirectory(globalState.getDatabaseName()).join().expect("create directory error");
         } catch (Exception e) {}
 
         return connection;

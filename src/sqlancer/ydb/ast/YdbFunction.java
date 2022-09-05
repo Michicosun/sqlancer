@@ -118,6 +118,27 @@ public class YdbFunction implements YdbExpression {
             public YdbType[] getInputTypesForReturnType(YdbType returnType, int nrArguments) {
                 return new YdbType[] { YdbType.string(), YdbType.uint32(), YdbType.uint32() };
             }
+        },
+        STARTS_WITH(2, "StartsWith") {
+            @Override
+            public YdbConstant apply(YdbConstant[] evaluatedArgs, YdbExpression... args) {
+                if (evaluatedArgs[0].isNull()) {
+                    return YdbConstant.createNullConstant();
+                }
+                String a = evaluatedArgs[0].asString();
+                String b = evaluatedArgs[1].asString();
+                return YdbConstant.createBooleanConstant(a.startsWith(b));
+            }
+
+            @Override
+            public boolean supportsReturnType(YdbType type) {
+                return type.typeClass == YdbType.Class.BOOL;
+            }
+
+            @Override
+            public YdbType[] getInputTypesForReturnType(YdbType returnType, int nrArguments) {
+                return new YdbType[] { YdbType.string(), YdbType.string() };
+            }
         };
 
         private String functionName;

@@ -1,24 +1,18 @@
 package sqlancer.ydb.oracle.tlp;
 
-import sqlancer.Randomly;
 import sqlancer.common.gen.ExpressionGenerator;
 import sqlancer.common.oracle.TernaryLogicPartitioningOracleBase;
 import sqlancer.common.oracle.TestOracle;
+import sqlancer.ydb.YdbCommon;
 import sqlancer.ydb.YdbProvider.YdbGlobalState;
 import sqlancer.ydb.YdbSchema;
-import sqlancer.ydb.YdbSchema.YdbColumn;
 import sqlancer.ydb.YdbSchema.YdbTable;
 import sqlancer.ydb.YdbSchema.YdbTables;
-import sqlancer.ydb.YdbType;
 import sqlancer.ydb.ast.*;
 import sqlancer.ydb.gen.YdbExpressionGenerator;
 import sqlancer.ydb.oracle.YdbOracleCommon;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class YdbTLPBase extends TernaryLogicPartitioningOracleBase<YdbExpression, YdbGlobalState> implements TestOracle {
 
@@ -29,8 +23,8 @@ public class YdbTLPBase extends TernaryLogicPartitioningOracleBase<YdbExpression
 
     public YdbTLPBase(YdbGlobalState state) {
         super(state);
-//        YdbCommon.addCommonExpressionErrors(errors);
-//        YdbCommon.addCommonFetchErrors(errors);
+        YdbCommon.addCommonTypeCastErrors(errors);
+        YdbCommon.addCommonParseErrors(errors);
     }
 
     @Override

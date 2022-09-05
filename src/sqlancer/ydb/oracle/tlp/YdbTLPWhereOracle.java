@@ -25,27 +25,27 @@ public class YdbTLPWhereOracle extends YdbTLPBase {
     }
 
     protected void whereCheck() throws Exception {
-//        YdbSelectQuery adapter = new YdbSelectQuery(select);
-        System.out.println("original: " + YdbVisitor.asString(select));
-//        List<List<Value<?>>> fullResultSet = YdbComparatorHelper.getResultSet(adapter, state);
+        YdbSelectQuery adapter = new YdbSelectQuery(select, errors);
+        List<List<Value<?>>> fullResultSet = YdbComparatorHelper.getResultSet(adapter, state);
 
-//        List<List<Value<?>>> compoundResultSet = new ArrayList<>();
+        List<List<Value<?>>> compoundResultSet = new ArrayList<>();
 
-        select.setOrderByClause(Collections.emptyList());
 
         select.setWhereClause(predicate);
-        System.out.println("predicate: " + YdbVisitor.asString(select));
-//        compoundResultSet.addAll(YdbComparatorHelper.getResultSet(adapter, state));
+        compoundResultSet.addAll(YdbComparatorHelper.getResultSet(adapter, state));
 
         select.setWhereClause(negatedPredicate);
-        System.out.println("negatedPredicate: " + YdbVisitor.asString(select));
-//        compoundResultSet.addAll(YdbComparatorHelper.getResultSet(adapter, state));
+        compoundResultSet.addAll(YdbComparatorHelper.getResultSet(adapter, state));
 
         select.setWhereClause(isNullPredicate);
-        System.out.println("nullPredicate: " + YdbVisitor.asString(select));
-//        compoundResultSet.addAll(YdbComparatorHelper.getResultSet(adapter, state));
+        compoundResultSet.addAll(YdbComparatorHelper.getResultSet(adapter, state));
 
-//        select.setWhereClause(predicate);
-//        YdbComparatorHelper.assumeResultSetsAreEqual(fullResultSet, compoundResultSet, adapter);
+        select.setWhereClause(predicate);
+        System.out.println(
+                "full_set_size = " + fullResultSet.size()
+                + ", compound_set_size = " + compoundResultSet.size()
+                + " -> " + YdbVisitor.asString(select)
+        );
+        YdbComparatorHelper.assumeResultSetsAreEqual(fullResultSet, compoundResultSet, adapter);
     }
 }

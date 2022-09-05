@@ -19,13 +19,15 @@ public final class YdbComparatorHelper {
     private static List<List<Value<?>>> getRowList(DataQueryResult result) {
         List<List<Value<?>>> rowList = new ArrayList<>();
 
-        ResultSetReader rs = result.getResultSet(0);
-        while (rs.next()) {
-            List<Value<?>> valueList = new ArrayList<>();
-            for (int i = 0; i < rs.getColumnCount(); ++i) {
-                valueList.add(rs.getColumn(i).getValue());
+        for (int rset_index = 0; result != null && rset_index < result.getResultSetCount(); ++rset_index) {
+            ResultSetReader rs = result.getResultSet(rset_index);
+            while (rs.next()) {
+                List<Value<?>> valueList = new ArrayList<>();
+                for (int i = 0; i < rs.getColumnCount(); ++i) {
+                    valueList.add(rs.getColumn(i).getValue());
+                }
+                rowList.add(valueList);
             }
-            rowList.add(valueList);
         }
 
         return rowList;
@@ -81,7 +83,7 @@ public final class YdbComparatorHelper {
         Set<List<Value<?>>> secondRowSet = new HashSet<>();
 
         firstRowSet.addAll(firstResultSet);
-        secondResultSet.addAll(secondResultSet);
+        secondRowSet.addAll(secondResultSet);
 
         if (!firstRowSet.equals(secondRowSet)) {
             String assertMessage = String.format("The Content of the result sets mismatch!\n %s \n %s\n %s",

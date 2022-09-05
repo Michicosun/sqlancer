@@ -1,5 +1,6 @@
 package sqlancer.ydb.ast;
 
+import com.google.common.primitives.UnsignedInteger;
 import sqlancer.IgnoreMeException;
 import sqlancer.ydb.YdbType;
 
@@ -146,15 +147,21 @@ public abstract class YdbConstant implements YdbExpression {
     //INT8
     public static class Int8Constant extends YdbConstant {
 
-        private final long val;
+        private long val;
 
         public Int8Constant(long val) {
             this.val = val;
+            if (this.val > 127) {
+                this.val = 127;
+            }
+            if (this.val < -128) {
+                this.val = -128;
+            }
         }
 
         @Override
         public String getTextRepresentation() {
-            return String.valueOf(val);
+            return "Int8('" + val + "')";
         }
 
         @Override
@@ -250,15 +257,21 @@ public abstract class YdbConstant implements YdbExpression {
     // INT16
     public static class Int16Constant extends YdbConstant {
 
-        private final long val;
+        private long val;
 
         public Int16Constant(long val) {
             this.val = val;
+            if (this.val > 32767) {
+                this.val = 32767;
+            }
+            if (this.val < -32768) {
+                this.val = -32768;
+            }
         }
 
         @Override
         public String getTextRepresentation() {
-            return String.valueOf(val);
+            return "Int16('" + val + "')";
         }
 
         @Override
@@ -353,10 +366,16 @@ public abstract class YdbConstant implements YdbExpression {
     // INT32
     public static class Int32Constant extends YdbConstant {
 
-        private final long val;
+        private long val;
 
         public Int32Constant(long val) {
             this.val = val;
+            if (this.val > 2147483647) {
+                this.val = 2147483647;
+            }
+            if (this.val < -2147483648) {
+                this.val = -2147483648;
+            }
         }
 
         @Override
@@ -561,15 +580,18 @@ public abstract class YdbConstant implements YdbExpression {
     // UINT8
     public static class UInt8Constant extends YdbConstant {
 
-        private final long val;
+        private long val;
 
         public UInt8Constant(long val) {
             this.val = val;
+            if (this.val > 255) {
+                this.val = 255;
+            }
         }
 
         @Override
         public String getTextRepresentation() {
-            return String.valueOf(val);
+            return "Uint8('" + val + "')";
         }
 
         @Override
@@ -665,15 +687,18 @@ public abstract class YdbConstant implements YdbExpression {
     // UINT16
     public static class UInt16Constant extends YdbConstant {
 
-        private final long val;
+        private long val;
 
         public UInt16Constant(long val) {
             this.val = val;
+            if (this.val > 65535) {
+                this.val = 65535;
+            }
         }
 
         @Override
         public String getTextRepresentation() {
-            return String.valueOf(val);
+            return "Uint16('" + val + "')";
         }
 
         @Override
@@ -769,15 +794,18 @@ public abstract class YdbConstant implements YdbExpression {
     // UINT32
     public static class UInt32Constant extends YdbConstant {
 
-        private final long val;
+        private long val;
 
         public UInt32Constant(long val) {
             this.val = val;
+            if (this.val > 4294967295L) {
+                this.val = 4294967295L;
+            }
         }
 
         @Override
         public String getTextRepresentation() {
-            return String.valueOf(val);
+            return val + "u";
         }
 
         @Override
@@ -881,7 +909,7 @@ public abstract class YdbConstant implements YdbExpression {
 
         @Override
         public String getTextRepresentation() {
-            return String.valueOf(val);
+            return "Uint64('" + val + "')";
         }
 
         @Override
@@ -985,7 +1013,7 @@ public abstract class YdbConstant implements YdbExpression {
 
         @Override
         public String getTextRepresentation() {
-            return String.format("'%s'", val.replace("'", "''"));
+            return String.format("\"%s\"", val);
         }
 
         @Override
@@ -1090,7 +1118,7 @@ public abstract class YdbConstant implements YdbExpression {
 
         @Override
         public String getTextRepresentation() {
-            return String.valueOf(val) + "f";
+            return val + "f";
         }
 
         @Override

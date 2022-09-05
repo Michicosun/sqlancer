@@ -4,6 +4,7 @@ import com.yandex.ydb.table.values.*;
 import sqlancer.Randomly;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class YdbType {
 
@@ -30,6 +31,7 @@ public class YdbType {
     public static Map<Class, YdbType> createdConstants;
 
     public static Map<Class, List<Integer>> intRank;
+    public static Map<Class, List<Class>> lowerInt;
 
     static {
         intRank = new HashMap<>();
@@ -41,6 +43,24 @@ public class YdbType {
         intRank.put(Class.UINT16, Arrays.asList(16, 0));
         intRank.put(Class.UINT32, Arrays.asList(32, 0));
         intRank.put(Class.UINT64, Arrays.asList(64, 0));
+    }
+
+    static {
+        lowerInt = new HashMap<>();
+        List<Class> intClasses = Arrays.asList(
+                Class.INT8, Class.INT16, Class.INT32, Class.INT64,
+                Class.UINT8, Class.UINT16, Class.UINT32, Class.UINT64
+        );
+
+        for (Class f : intClasses) {
+            lowerInt.put(f, new ArrayList<>());
+            for (Class s : intClasses) {
+                if (getResultClassInIntBinOp(f, s) == f) {
+                    lowerInt.get(f).add(s);
+                }
+            }
+        }
+
     }
 
     public Class typeClass;
@@ -82,12 +102,17 @@ public class YdbType {
         List<Integer> rankRight = intRank.get(right);
 
         for (int i = 0; i < rankLeft.size(); ++i) {
-            if (rankLeft.get(i) < rankRight.get(i)) {
+            if (rankLeft.get(i) > rankRight.get(i)) {
                 return left;
             }
         }
 
         return right;
+    }
+
+    public static Class getLowerIntType(Class type) {
+        List<Class> lower = lowerInt.get(type);
+        return Randomly.fromList(lower);
     }
 
     public static YdbType bool() {

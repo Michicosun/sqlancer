@@ -61,8 +61,8 @@ public class YdbCreateTableQuery extends YdbQueryAdapter {
     @Override
     public <G extends GlobalState<?, ?, YdbConnection>> boolean execute(G globalState, String... fills) throws Exception {
         boolean createStatus = true;
-        try (TableClient client = TableClient.newClient(GrpcTableRpc.useTransport(globalState.getConnection().transport)).build()) {
-            SessionRetryContext ctx = SessionRetryContext.create(client).build();
+        try {
+            SessionRetryContext ctx = globalState.getConnection().sessionRetryContext;
             ctx.supplyStatus(session -> {
                 return session.createTable(fullPath, tableDesc);
             }).join().expect("create table error");

@@ -27,17 +27,11 @@ public class YdbUpsertQuery extends YdbQueryAdapter {
 
     @Override
     public <G extends GlobalState<?, ?, YdbConnection>> boolean execute(G globalState, String... fills) throws Exception {
-        boolean upsertStatus = true;
-        try (TableClient client = TableClient.newClient(GrpcTableRpc.useTransport(globalState.getConnection().transport)).build()) {
-            SessionRetryContext ctx = SessionRetryContext.create(client).build();
-            DataQueryResult result = ctx.supplyResult(session -> {
-                return session.executeDataQuery(upsertDataQuery, TxControl.serializableRw().setCommitTx(true));
-            }).join().expect("create table error");
-        } catch (Exception e) {
-            upsertStatus = false;
-            e.printStackTrace();
-        }
-        return upsertStatus;
+        SessionRetryContext ctx = globalState.getConnection().sessionRetryContext;
+        ctx.supplyResult(session -> {
+            return session.executeDataQuery(upsertDataQuery, TxControl.serializableRw().setCommitTx(true));
+        }).join().expect("upsert query error");
+        return true;
     }
 
     @Override

@@ -75,7 +75,7 @@ public class YdbExpressionGenerator implements ExpressionGenerator<YdbExpression
         List<YdbFunctionWithResult> functions = Stream.of(YdbFunction.YdbFunctionWithResult.values())
                 .filter(f -> f.supportsReturnType(type)).collect(Collectors.toList());
         if (functions.isEmpty()) {
-            throw new IgnoreMeException();
+            throw new AssertionError("no function with return type: " + type.toString());
         }
         YdbFunctionWithResult randomFunction = Randomly.fromList(functions);
         int nrArgs = randomFunction.getNrArgs();
@@ -213,7 +213,7 @@ public class YdbExpressionGenerator implements ExpressionGenerator<YdbExpression
                 case UINT16:
                 case UINT32:
                 case UINT64:
-                    return generateIntExpression(depth);
+                    return generateIntExpression(depth, dataType);
                 case STRING:
                     return generateStringExpression(depth);
                 default:
@@ -257,16 +257,11 @@ public class YdbExpressionGenerator implements ExpressionGenerator<YdbExpression
         UNARY_OPERATION, FUNCTION, CAST, BINARY_ARITHMETIC_EXPRESSION
     }
 
-    private YdbExpression generateIntExpression(int depth) {
+    private YdbExpression generateIntExpression(int depth, YdbType dataType) {
         IntExpression option;
         option = Randomly.fromOptions(IntExpression.values());
 
-        YdbType.Class classType = Randomly.fromOptions(
-                YdbType.Class.INT32,
-                YdbType.Class.INT64,
-                YdbType.Class.UINT32,
-                YdbType.Class.UINT64
-        );
+        YdbType.Class classType = dataType.typeClass;
 
         switch (option) {
         case CAST:
@@ -274,12 +269,24 @@ public class YdbExpressionGenerator implements ExpressionGenerator<YdbExpression
         case UNARY_OPERATION:
             YdbExpression intExpression = generateExpression(depth + 1, YdbType.type(classType));
             switch (classType) {
+                case INT8:
+                    return new YdbPrefixOperation(intExpression,
+                            Randomly.getBoolean() ? PrefixOperator.UNARY_PLUS_INT8 : PrefixOperator.UNARY_MINUS_INT8);
+                case INT16:
+                    return new YdbPrefixOperation(intExpression,
+                            Randomly.getBoolean() ? PrefixOperator.UNARY_PLUS_INT16 : PrefixOperator.UNARY_MINUS_INT16);
                 case INT32:
                     return new YdbPrefixOperation(intExpression,
                             Randomly.getBoolean() ? PrefixOperator.UNARY_PLUS_INT32 : PrefixOperator.UNARY_MINUS_INT32);
                 case INT64:
                     return new YdbPrefixOperation(intExpression,
                             Randomly.getBoolean() ? PrefixOperator.UNARY_PLUS_INT64 : PrefixOperator.UNARY_MINUS_INT64);
+                case UINT8:
+                    return new YdbPrefixOperation(intExpression,
+                            Randomly.getBoolean() ? PrefixOperator.UNARY_PLUS_UINT8 : PrefixOperator.UNARY_MINUS_UINT8);
+                case UINT16:
+                    return new YdbPrefixOperation(intExpression,
+                            Randomly.getBoolean() ? PrefixOperator.UNARY_PLUS_UINT16 : PrefixOperator.UNARY_MINUS_UINT16);
                 case UINT32:
                     return new YdbPrefixOperation(intExpression,
                             Randomly.getBoolean() ? PrefixOperator.UNARY_PLUS_UINT32 : PrefixOperator.UNARY_MINUS_UINT32);
@@ -290,12 +297,7 @@ public class YdbExpressionGenerator implements ExpressionGenerator<YdbExpression
         case FUNCTION:
             return generateFunction(depth + 1, YdbType.type(classType));
         case BINARY_ARITHMETIC_EXPRESSION:
-            YdbType.Class secondClassType = Randomly.fromOptions(
-                    YdbType.Class.INT32,
-                    YdbType.Class.INT64,
-                    YdbType.Class.UINT32,
-                    YdbType.Class.UINT64
-            );
+            YdbType.Class secondClassType = YdbType.getLowerIntType(classType);
             return new YdbBinaryArithmeticOperation(
                     generateExpression(depth + 1, YdbType.type(classType)),
                     generateExpression(depth + 1, YdbType.type(secondClassType)), YdbBinaryOperator.getRandom());
@@ -323,9 +325,9 @@ public class YdbExpressionGenerator implements ExpressionGenerator<YdbExpression
             case BOOL:
                 return YdbConstant.createBooleanConstant(Randomly.getBoolean());
             case FLOAT:
-                return YdbConstant.createFloatConstant((float) r.getDouble());
+                return YdbConstant.createFloatConstant((float) r.getFiniteDouble());
             case DOUBLE:
-                return YdbConstant.createDoubleConstant(r.getDouble());
+                return YdbConstant.createDoubleConstant(r.getFiniteDouble());
             case INT8:
                 return YdbConstant.createInt8Constant(r.getInteger());
             case INT16:

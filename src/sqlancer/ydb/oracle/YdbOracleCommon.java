@@ -33,7 +33,7 @@ public class YdbOracleCommon {
     }
     
     public static List<YdbColumnNode> getFetchColumns(YdbSource source) {
-        if (Randomly.getBooleanWithRatherLowProbability()) {
+        if (!(source instanceof YdbJoin) && Randomly.getBooleanWithRatherLowProbability()) {
             return Arrays.asList(new YdbRealColumn(null, "*", null));
         }
         List<YdbColumnNode> fetchColumns = Randomly.nonEmptySubset(source.getSourceColumns()).stream()
@@ -59,7 +59,7 @@ public class YdbOracleCommon {
                 for (YdbColumnNode oldColumn : table.getSourceColumns()) {
                     if (newColumn.getType().typeClass == oldColumn.getType().typeClass) {
                         return new YdbBinaryComparisonOperation(newColumn, oldColumn,
-                                Randomly.fromOptions(YdbBinaryComparisonOperation.YdbBinaryComparisonOperator.values()));
+                                Randomly.fromOptions(YdbBinaryComparisonOperation.YdbBinaryComparisonOperator.EQUALS));
                     }
                 }
             }

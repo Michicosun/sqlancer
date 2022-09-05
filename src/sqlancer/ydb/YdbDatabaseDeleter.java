@@ -21,13 +21,8 @@ public class YdbDatabaseDeleter {
     }
 
     public void deleteFolder(String path) {
-        try (
-                SchemeClient schemeClient = SchemeClient.newClient(GrpcSchemeRpc.useTransport(connection.transport)).build();
-                TableClient tableClient = TableClient.newClient(GrpcTableRpc.useTransport(connection.transport)).build())
-        {
-            SessionRetryContext ctx = SessionRetryContext.create(tableClient).build();
-            deleteFolderRec(path, schemeClient, ctx);
-        }
+        SessionRetryContext ctx = connection.sessionRetryContext;
+        deleteFolderRec(path, connection.schemeClient, ctx);
     }
 
     private void deleteFolderRec(String path, SchemeClient schemeClient, SessionRetryContext ctx) {
